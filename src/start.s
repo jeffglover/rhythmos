@@ -45,6 +45,42 @@ mboot:
   .int end 	# End of kernel.
   .int start 	# Kernel entry point (initial EIP).
 
+.macro PUSHAQ
+  push %rax
+  push %rbx
+  push %rcx
+  push %rdx
+  push %rbp
+  push %rdi
+  push %rsi
+  push %r8
+  push %r9
+  push %r10
+  push %r11
+  push %r12
+  push %r13
+  push %r14
+  push %r15
+.endm
+
+.macro POPAQ
+   pop %r15
+   pop %r14
+   pop %r13
+   pop %r12
+   pop %r11
+   pop %r10
+   pop %r9
+   pop %r8
+   pop %rsi
+   pop %rdi
+   pop %rbp
+   pop %rdx
+   pop %rcx
+   pop %rbx
+   pop %rax
+.endm
+
 idle:
   jmp idle
 
@@ -153,13 +189,9 @@ isrs_noparam 48        # System call
 
 call_interrupt_handler:
   # Save the state of all CPU registers
-  pusha
-  push %ds
-  push %es
-  push %fs
-  push %gs
+  PUSHAQ
   fsave fpustate
-  subl $108,%rsp
+  sub $108,%rsp
 
   # Change the segment registers to those used for kernel mode
   mov $0x10,%ax
@@ -178,11 +210,7 @@ call_interrupt_handler:
   # Restore register state
   frstor fpustate
   add $108,%rsp
-  pop %gs
-  pop %fs
-  pop %es
-  pop %ds
-  popa
+  POPAQ
   add $8,%rsp
   iret
 
@@ -213,7 +241,7 @@ enter_user_mode:
   push $0x23              # Stack segment to restore
   push %rax               # Stack pointer to restore
   pushf                    # Save processor flags
-  or $0x200, 0(%rsp)      # Set bit indicating interrupts are enabled
+  orl $0x200, 0(%rsp)      # Set bit indicating interrupts are enabled
   push $0x1B              # Code segment to restore (user mode)
   push $switch_to_user_end # Instruction pointer to restore (return address)
 
@@ -234,7 +262,7 @@ enable_paging:
   # Set the paging bit of the CR0 register, which tells the processor to enable
   # paging
   mov %cr0,%rax
-  or $0x80000000,%rax
+  orl $0x80000000,%eax
   mov %rax,%cr0
   ret
 
@@ -254,20 +282,20 @@ getcr2:
 
 .globl inb
 inb:
-  push %edx
+  push %rdx
   mov 8(%rsp),%edx
   mov $0,%rax
   inb %dx,%al
-  pop %edx
+  pop %rdx
   ret
 
 .globl outb
 outb:
-  push %edx
+  push %rdx
   mov 12(%rsp),%rax
-  mov 8(%rsp),%edx
+  mov 8(%rsp),%rdx
   outb %al,%dx
-  pop %edx
+  pop %rdx
   ret
 
 .section .bss
