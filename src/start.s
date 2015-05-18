@@ -177,7 +177,7 @@ call_interrupt_handler:
 
   # Restore register state
   frstor fpustate
-  addl $108,%rsp
+  add $108,%rsp
   pop %gs
   pop %fs
   pop %es
@@ -210,11 +210,11 @@ enter_user_mode:
   # manufacturing the saved CPU state on the stack, which in the case of a real
   # interrupt would be put there by the processor itself.
   mov %rsp, %rax
-  pushl $0x23              # Stack segment to restore
-  pushl %rax               # Stack pointer to restore
+  push $0x23              # Stack segment to restore
+  push %rax               # Stack pointer to restore
   pushf                    # Save processor flags
-  orl $0x200, 0(%rsp)      # Set bit indicating interrupts are enabled
-  pushl $0x1B              # Code segment to restore (user mode)
+  or $0x200, 0(%rsp)      # Set bit indicating interrupts are enabled
+  push $0x1B              # Code segment to restore (user mode)
   push $switch_to_user_end # Instruction pointer to restore (return address)
 
   # Now we execute the iret instruction. This will cause the CPU to pop the
@@ -229,34 +229,34 @@ switch_to_user_end:        # The iret instruction will "return" here
 enable_paging:
   # Get the parameter to this function from the stack, and store it in the CR3
   # register, which tells the processor which page directory to use
-  movl 4(%rsp),%rax
-  movl %rax,%cr3
+  mov 4(%rsp),%rax
+  mov %rax,%cr3
   # Set the paging bit of the CR0 register, which tells the processor to enable
   # paging
-  movl %cr0,%rax
-  orl $0x80000000,%rax
-  movl %rax,%cr0
+  mov %cr0,%rax
+  or $0x80000000,%rax
+  mov %rax,%cr0
   ret
 
 disable_paging:
   # Clear the paging bit of the CR0 register
-  movl %cr0,%rax
-  andl $0x7FFFFFFF,%rax
-  movl %rax,%cr0
+  mov %cr0,%rax
+  and $0x7FFFFFFF,%rax
+  mov %rax,%cr0
   ret
 
 # Returns the value of the CR2 register, which in the case of a page fault,
 # indicates the address that the process was trying to access when the fault
 # occurred.
 getcr2:
-  movl %cr2,%rax
+  mov %cr2,%rax
   ret
 
 .globl inb
 inb:
   push %edx
-  movl 8(%rsp),%edx
-  movl $0,%rax
+  mov 8(%rsp),%edx
+  mov $0,%rax
   inb %dx,%al
   pop %edx
   ret
@@ -264,8 +264,8 @@ inb:
 .globl outb
 outb:
   push %edx
-  movl 12(%rsp),%rax
-  movl 8(%rsp),%edx
+  mov 12(%rsp),%rax
+  mov 8(%rsp),%edx
   outb %al,%dx
   pop %edx
   ret
